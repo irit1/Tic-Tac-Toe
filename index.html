@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Here Home Assignment</title>
+    <link href="https://fonts.googleapis.com/css?family=Comfortaa" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Comfortaa', sans-serif;
+        }
+
+        .app-header {
+            font-size: 50px;
+            margin-top: 30px;
+        }
+
+        .app-message {
+            height: 25px;
+        }
+
+        .app-board {
+            margin-top: 30px;
+        }
+
+        .app-board-tile {
+            display: inline-flex;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            width: 60px;
+            height: 60px;
+            margin: 4px 2px;
+            vertical-align: middle;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .app-board-tile span {
+            align-self: center;
+        }
+
+        .app-board-tile:hover, .app-board-tile.app-tile-set {
+            background-color: #eaeaea;
+        }
+
+        .app-board-tile.app-tile-set.app-tile-won {
+            background-color: bisque;
+        }
+
+        .app-message {
+            margin-top: 30px;
+        }
+    </style>
+
+</head>
+<body style="text-align: center">
+
+<div class="app-header">Tic-Tac-Toe</div>
+
+<!-- messages -->
+<div class="app-message">
+    <span id="message"></span>
+    <button id="restart-button" style="margin-left: 15px; display: none;">Restart</button>
+</div>
+
+<!-- play board -->
+<div class="app-board">
+    <div class="app-board-row" data-row="0">
+        <div class="app-board-tile" data-col="0"><span></span></div>
+        <div class="app-board-tile" data-col="1"><span></span></div>
+        <div class="app-board-tile" data-col="2"><span></span></div>
+    </div>
+    <div class="app-board-row" data-row="1">
+        <div class="app-board-tile" data-col="0"><span></span></div>
+        <div class="app-board-tile" data-col="1"><span></span></div>
+        <div class="app-board-tile" data-col="2"><span></span></div>
+    </div>
+    <div class="app-board-row" data-row="2">
+        <div class="app-board-tile" data-col="0"><span></span></div>
+        <div class="app-board-tile" data-col="1"><span></span></div>
+        <div class="app-board-tile" data-col="2"><span></span></div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+<script>
+    var playersSigns = ['X', 'O'];
+    var board, currPlayer, gameEnd;
+
+    restartGame();
+
+    // tile click event
+    $('.app-board-tile').click(e => {
+        if (gameEnd)
+            return;
+
+        // get tile row & column
+        let row = $(e.target).closest('.app-board-row').attr('data-row');
+        let col = $(e.target).attr('data-col');
+        if (board[row][col] === '') {
+            // set board tile
+            let sign = playersSigns[currPlayer];
+            board[row][col] = sign;
+            $(e.target).find('span').text(sign);
+            $(e.target).addClass('app-tile-set');
+            // check if there's a win
+            let winTiles = getWonTiles(board, sign);
+            if (winTiles.length > 0) {
+                // there's a win
+                gameEnd = true;
+                $("#message").text("Player " + (currPlayer+1) + " won !!!");
+                $("#restart-button").show();
+                // mark winning tiles
+                for (let i=0; i<winTiles.length; i++) {
+                    getTileElement(winTiles[i].row, winTiles[i].col).addClass('app-tile-won');
+                }
+            }
+            else {
+                // no win yet
+                if (isBoardFull(board)) {
+                    // board is full - it's a tie
+                    gameEnd = true;
+                    $("#message").text("It's a tie");
+                    $("#restart-button").show();
+                }
+                else {
+                    // move to next player
+                    currPlayer = (currPlayer + 1) % 2;
+                    $("#message").text("It's your turn player " + (currPlayer+1));
+                }
+            }
+        }
+        else {
+            // board tile was already set
+            console.error('Invalid selection');
+        }
+    });
+
+    // restart button click event
+    $('#restart-button').click(e =>{
+        restartGame();
+    });
+
+    function restartGame() {
+        board = [['', '', ''], ['', '', ''], ['', '', '']];
+        currPlayer = 0;
+        gameEnd = false;
+
+        let tiles = $('.app-board-tile');
+        tiles.find('span').text('');
+        tiles.removeClass('app-tile-set');
+        tiles.removeClass('app-tile-won');
+        $('#message').text("It's you turn player 1");
+        $('#restart-button').hide();
+    }
+
+    // checks if there's a win for the given sign and return an array with the indexes of the winning tiles
+    // if there's no win - return an empty array
+    function getWonTiles(board, sign) {
+        let won;
+        // check for a win per row
+        for (let row=0; row<3; row++) {
+            // for each row check if there's a win (all tiles match the given sign)
+            won = true;
+            let wonTiles = []; // a list of the won tile indexes to return
+            for (let col=0; col<3; col++) {
+                if (board[row][col] === sign) {
+                    // the tile matches the sign - add to winTiles list
+                    wonTiles.push({row: row, col: col});
+                }
+                else {
+                    // a tile that doesn't match the sign was found - no win in this row
+                    won = false;
+                    break;
+                }
+            }
+            // if there's a win for this row - return the winning tile
+            if (won) {
+                return wonTiles;
+            }
+        }
+
+        // check for a win per column
+        for (let col=0; col<3; col++) {
+            // for each row check if there's a win (all tiles match the given sign)
+            won = true;
+            let wonTiles = []; // a list of the won tile indexes to return
+            for (let row=0; row<3; row++) {
+                if (board[row][col] === sign) {
+                    // the tile matches the sign - add to winTiles list
+                    wonTiles.push({row: row, col: col});
+                }
+                else {
+                    // a tile that doesn't match the sign was found - no win in this column
+                    won = false;
+                    break;
+                }
+            }
+            // if there's a win for this column - return the winning tile
+            if (won) {
+                return wonTiles;
+            }
+        }
+
+        // check for diagonal win
+        won = true;
+        let wonTiles = []; // a list of the won tile indexes to return
+        for (let i=0; i<3; i++) {
+            if (board[i][i] === sign) {
+                // the tile matches the sign - add to winTiles list
+                wonTiles.push({row: i, col: i});
+            }
+            else {
+                // a tile that doesn't match the sign was found - no win in this diagonal
+                won = false;
+                break;
+            }
+        }
+        // if there's a win for this diagonal - return the winning tile
+        if (won) {
+            return wonTiles;
+        }
+
+        // check for diagonal win
+        won = true;
+        wonTiles = []; // a list of the won tile indexes to return
+        for (let i=0; i<3; i++) {
+            if (board[i][2-i] === sign) {
+                // the tile matches the sign - add to winTiles list
+                wonTiles.push({row: i, col: 2-i});
+            }
+            else {
+                // a tile that doesn't match the sign was found - no win in this diagonal
+                won = false;
+                break;
+            }
+        }
+        // if there's a win for this diagonal - return the winning tile
+        if (won) {
+            return wonTiles;
+        }
+
+        return [];
+    }
+
+    function isBoardFull(board) {
+        for (let row=0; row<3; row++) {
+            for (let col=0; col<3; col++) {
+                if (board[row][col] === '')
+                    // board has an empty tile - so it's not full
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    function getTileElement(row, col) {
+        return $(`.app-board-row[data-row=${row}]`).find(`.app-board-tile[data-col=${col}]`);
+    }
+</script>
+
+</body>
+</html>
